@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef enum {
   LEFT,
@@ -56,8 +56,19 @@ token to_token(char c) {
   return (token){is_bracket, b};
 }
 
-// TODO return error messages
-bool check(char* code, size_t len) {
+/*
+ * \brief Checks if brackets are balanced.
+ *
+ * This function takes checks if a piece of code
+ * has balanced brackets, i.e. (), [], and {}.
+ * For example, this is balanced: [{()({[]})}]
+ * However, this is not: [{()({[}])}]
+ *
+ * \param code The code to check.
+ * \param len The number of characters in the code.
+ * \return TODO
+ */
+char *check(char *code, size_t len) {
   // TODO Vec to store relevant tokens
   for (size_t i = 0; i < len; i++) {
     char c = code[i];
