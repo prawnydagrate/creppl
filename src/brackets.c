@@ -1,6 +1,7 @@
-#include <stdbool.h>
-#include <stdlib.h>
 #include "brackets.h"
+#include "stack.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 token to_token(char c) {
   bracket b = {0};
@@ -46,17 +47,50 @@ token to_token(char c) {
  *
  * \param code The code to check.
  * \param len The number of characters in the code.
- * \return TODO
+ * \return TODO idea (with bitshifting):
+ * - u8 error      |    8
+ * - u8 valid      | +  8
+ * - u16 line      | + 16
+ * - u16 col       | + 16
+ * - char expected | +  8
+ * - char got      | +  8
+ *   --------------------
+ * - u64 result    |   64
  */
-char *check(char *code, size_t len) {
+uint64_t check(char *code, uint16_t len) {
   // TODO Vec to store relevant tokens
-  for (size_t i = 0; i < len; i++) {
+  stack_s brackets = {0};
+  stack_init(&brackets, sizeof(btype), 8);
+  uint16_t line = 1;
+  uint16_t col = 0;
+  for (uint16_t i = 0; i < len; i++) {
     char c = code[i];
+    if (c == '\n') {
+      line++;
+      col = 0;
+      continue;
+    } else {
+      col++;
+    }
     token t = to_token(c);
     if (!t.is_bracket) {
       continue;
     }
+    if (t.b.direction == LEFT) {
+      if (stack_push(&brackets, &t.b.type) != STACK_SUCCESS) {
+        return ERR_MALLOC_FAILURE;
+      }
+    } else if (t.b.direction == RIGHT) {
+      void *popped = stack_pop(&brackets);
+      if (popped == NULL)
+        return ERR_MALLOC_FAILURE;
+      btype last = *(btype *)popped;
+      if (last != t.b.type) {
+        // TODO
+        return (uint64_t)0 << 56/* | */;
+      }
+    }
   }
-  // TODO
+  stack_cleanup(&brackets);
   return false;
 }

@@ -1,3 +1,12 @@
+#ifndef BRACKETS_H
+#define BRACKETS_H
+
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#define ERR_MALLOC_FAILURE ((uint64_t)0xff << 56)
+
 typedef enum {
   LEFT,
   RIGHT,
@@ -19,3 +28,8 @@ typedef struct {
   bracket b;
 } token;
 
+token to_token(char c);
+
+uint64_t check(char *code, uint16_t len);
+
+#endif
