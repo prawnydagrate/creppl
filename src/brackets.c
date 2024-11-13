@@ -81,6 +81,7 @@ uint64_t check(char *code, uint16_t len) {
         return ERR_MALLOC_FAILURE;
       }
     } else if (t.b.direction == RIGHT) {
+      // TODO account for right bracket with empty stack
       void *popped = stack_pop(&brackets);
       if (popped == NULL)
         return ERR_MALLOC_FAILURE;
