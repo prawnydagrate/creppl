@@ -1,21 +1,19 @@
 #ifndef BRACKETS_H
 #define BRACKETS_H
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#define ERR_MALLOC_FAILURE ((uint64_t)0xff << 56)
-
-typedef enum {
-  LEFT,
-  RIGHT,
+typedef enum : uint8_t {
+  B_LEFT,
+  B_RIGHT,
 } bdir;
 
-typedef enum {
-  PAREN,
-  SQUARE,
-  CURLY,
+typedef enum : uint8_t {
+  B_PAREN,
+  B_SQUARE,
+  B_CURLY,
 } btype;
 
 typedef struct {
@@ -28,8 +26,38 @@ typedef struct {
   bracket b;
 } token;
 
-token to_token(char c);
+token char_to_token(char c);
 
-uint64_t check(char *code, uint16_t len);
+char bracket_to_char(btype t, bdir d);
+
+typedef enum : uint8_t {
+  CHECK_ERR_MALLOC_FAILURE = 0,
+  CHECK_BALANCED,
+  CHECK_R_EXTRA,
+  CHECK_R_MISMATCH,
+  CHECK_L_UNCLOSED,
+} check_status;
+
+typedef struct {
+  check_status status;
+  uint16_t line;
+  uint16_t col;
+  char expected;
+  char got;
+  uint16_t level;
+} check_result_t;
+
+/*
+ * Checks if brackets are balanced.
+ *
+ * This function takes checks if a piece of code
+ * has balanced brackets, i.e. (), [], and {}.
+ * For example, this is balanced: `[{()({[]})}]`
+ * However, this is not: `[{()({[}])}]`
+ *
+ * @param code The code to check.
+ * @return The result of checking.
+ */
+check_result_t check(char *code);
 
 #endif

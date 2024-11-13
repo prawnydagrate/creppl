@@ -2,34 +2,36 @@
 #include "stack.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
-token to_token(char c) {
+token char_to_token(char c) {
   bracket b = {0};
   bool is_bracket = true;
   switch (c) {
   case '(':
-    b.direction = LEFT;
-    b.type = PAREN;
+    b.direction = B_LEFT;
+    b.type = B_PAREN;
     break;
   case '[':
-    b.direction = LEFT;
-    b.type = SQUARE;
+    b.direction = B_LEFT;
+    b.type = B_SQUARE;
     break;
   case '{':
-    b.direction = LEFT;
-    b.type = CURLY;
+    b.direction = B_LEFT;
+    b.type = B_CURLY;
     break;
   case ')':
-    b.direction = RIGHT;
-    b.type = PAREN;
+    b.direction = B_RIGHT;
+    b.type = B_PAREN;
     break;
   case ']':
-    b.direction = RIGHT;
-    b.type = SQUARE;
+    b.direction = B_RIGHT;
+    b.type = B_SQUARE;
     break;
   case '}':
-    b.direction = RIGHT;
-    b.type = CURLY;
+    b.direction = B_RIGHT;
+    b.type = B_CURLY;
     break;
   default:
     is_bracket = false;
@@ -37,33 +39,43 @@ token to_token(char c) {
   return (token){is_bracket, b};
 }
 
-/*
- * \brief Checks if brackets are balanced.
- *
- * This function takes checks if a piece of code
- * has balanced brackets, i.e. (), [], and {}.
- * For example, this is balanced: [{()({[]})}]
- * However, this is not: [{()({[}])}]
- *
- * \param code The code to check.
- * \param len The number of characters in the code.
- * \return TODO idea (with bitshifting):
- * - u8 error      |    8
- * - u8 valid      | +  8
- * - u16 line      | + 16
- * - u16 col       | + 16
- * - char expected | +  8
- * - char got      | +  8
- *   --------------------
- * - u64 result    |   64
- */
-uint64_t check(char *code, uint16_t len) {
-  // TODO Vec to store relevant tokens
+char bracket_to_char(btype t, bdir d) {
+// both btype and bdir are 1 byte long,
+// so they can be combined like this:
+#define BRACKET(t, d) ((uint16_t)t << 8 | d)
+
+  switch (BRACKET(t, d)) {
+  case BRACKET(B_PAREN, B_LEFT):
+    return '(';
+  case BRACKET(B_PAREN, B_RIGHT):
+    return ')';
+  case BRACKET(B_SQUARE, B_LEFT):
+    return '[';
+  case BRACKET(B_SQUARE, B_RIGHT):
+    return ']';
+  case BRACKET(B_CURLY, B_LEFT):
+    return '{';
+  case BRACKET(B_CURLY, B_RIGHT):
+    return '}';
+  default:
+    fprintf(stderr, "the universe is malfunctioning\n");
+    exit(1);
+  }
+}
+
+check_result_t check(char *code) {
+#define S_CLEANUP stack_cleanup(&brackets);
+#define ERR_MALLOC_FAILURE (check_result_t){0}
+#define RES(status, line, col, expected, got, level)                          \
+  (check_result_t) { status, line, col, expected, got, level }
+
   stack_s brackets = {0};
   stack_init(&brackets, sizeof(btype), 8);
   uint16_t line = 1;
   uint16_t col = 0;
-  for (uint16_t i = 0; i < len; i++) {
+  uint16_t b_line = 1;
+  uint16_t b_col = 0;
+  for (uint16_t i = 0; i < strlen(code); i++) {
     char c = code[i];
     if (c == '\n') {
       line++;
@@ -72,26 +84,49 @@ uint64_t check(char *code, uint16_t len) {
     } else {
       col++;
     }
-    token t = to_token(c);
+    token t = char_to_token(c);
     if (!t.is_bracket) {
       continue;
     }
-    if (t.b.direction == LEFT) {
+    b_line = line;
+    b_col = col;
+    if (t.b.direction == B_LEFT) {
+      // push left brackets onto the stack
       if (stack_push(&brackets, &t.b.type) != STACK_SUCCESS) {
+        S_CLEANUP
         return ERR_MALLOC_FAILURE;
       }
-    } else if (t.b.direction == RIGHT) {
-      // TODO account for right bracket with empty stack
+    } else if (t.b.direction == B_RIGHT) {
+      if (brackets.len == 0) {
+        // cannot have a right bracket without a left bracket
+        S_CLEANUP
+        return RES(CHECK_R_EXTRA, line, col, 0, c, 0);
+      }
       void *popped = stack_pop(&brackets);
-      if (popped == NULL)
+      if (popped == NULL) {
+        S_CLEANUP
         return ERR_MALLOC_FAILURE;
+      }
       btype last = *(btype *)popped;
+      free(popped);
       if (last != t.b.type) {
-        // TODO
-        return (uint64_t)0 << 56/* | */;
+        S_CLEANUP
+        return RES(CHECK_R_MISMATCH, line, col, bracket_to_char(last, B_RIGHT),
+                   bracket_to_char(t.b.type, t.b.direction), brackets.len);
       }
     }
   }
-  stack_cleanup(&brackets);
-  return false;
+  if (brackets.len == 0) {
+    S_CLEANUP
+    return RES(CHECK_BALANCED, 0, 0, 0, 0, 0);
+  }
+  void *popped = stack_pop(&brackets);
+  if (popped == NULL) {
+    S_CLEANUP
+    return ERR_MALLOC_FAILURE;
+  }
+  btype last = *(btype *)popped;
+  free(popped);
+  return RES(CHECK_L_UNCLOSED, b_line, b_col, bracket_to_char(last, B_RIGHT), 0,
+             brackets.len);
 }
