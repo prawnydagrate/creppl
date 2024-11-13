@@ -58,7 +58,7 @@ char bracket_to_char(btype t, bdir d) {
   case BRACKET(B_CURLY, B_RIGHT):
     return '}';
   default:
-    fprintf(stderr, "the universe is malfunctioning\n");
+    fprintf(stderr, "why did you cast some random ahh value to an enum??\n");
     exit(1);
   }
 }
