@@ -66,16 +66,16 @@ char bracket_to_char(btype t, bdir d) {
 check_result_t check(char *code) {
 #define S_CLEANUP stack_cleanup(&brackets);
 #define ERR_MALLOC_FAILURE (check_result_t){0}
-#define RES(status, line, col, expected, got, level)                          \
-  (check_result_t) { status, line, col, expected, got, level }
+#define RES(status, line, col, expected, got, level)                           \
+  (check_result_t){status, line, col, expected, got, level}
 
   stack_s brackets = {0};
   stack_init(&brackets, sizeof(btype), 8);
-  uint16_t line = 1;
-  uint16_t col = 0;
-  uint16_t b_line = 1;
-  uint16_t b_col = 0;
-  for (uint16_t i = 0; i < strlen(code); i++) {
+  unsigned long line = 1;
+  unsigned long col = 0;
+  unsigned long b_line = 1;
+  unsigned long b_col = 0;
+  for (unsigned long i = 0; i < strlen(code); i++) {
     char c = code[i];
     if (c == '\n') {
       line++;
@@ -128,5 +128,5 @@ check_result_t check(char *code) {
   btype last = *(btype *)popped;
   free(popped);
   return RES(CHECK_L_UNCLOSED, b_line, b_col, bracket_to_char(last, B_RIGHT), 0,
-             brackets.len);
+             brackets.len + 1);
 }

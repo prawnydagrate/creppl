@@ -1,2 +1,2 @@
 # creppl
-A very simple read-eval-print loop for C
+A very crappy read-eval-print loop for C

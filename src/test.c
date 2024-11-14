@@ -24,21 +24,23 @@ void print_res(char *code) {
   }
   printf("code: %s\n"
          "status: %s\n"
-         "line %d, col %d\n"
+         "line %lu, col %lu\n"
          "expected %c, got %c\n"
-         "level: %d\n"
+         "level: %lu\n"
          "\n",
          code, status, res.line, res.col, res.expected ? res.expected : '-',
          res.got ? res.got : '-', res.level);
 }
 
 int main() {
+  // brackets test
   char *pass1 = "[{((([([])])))}]";
   char *pass2 = "(()[][(){}({[{()}]})])";
   char *rextra1 = "(()[][(){}({[{()}]})])]";
   char *rmismatch1 = "[{((([([])])))}}]";
   char *rmismatch2 = "(()[][(){}({[{()}]})}])";
   char *lunclosed1 = "[([(()[][(){}({[{()}]})]){{}}])()";
+  char *lunclosed2 = "[";
   char *level_test = "[[{({[]})}[]([{()}]";
   print_res(pass1);
   print_res(pass2);
@@ -46,5 +48,6 @@ int main() {
   print_res(rmismatch1);
   print_res(rmismatch2);
   print_res(lunclosed1);
+  print_res(lunclosed2);
   print_res(level_test);
 }

@@ -1,4 +1,5 @@
 #ifndef BRACKETS_H
+
 #define BRACKETS_H
 
 #include <stdbool.h>
@@ -40,11 +41,11 @@ typedef enum : uint8_t {
 
 typedef struct {
   check_status status;
-  uint16_t line;
-  uint16_t col;
+  unsigned long line;
+  unsigned long col;
   char expected;
   char got;
-  uint16_t level;
+  unsigned long level;
 } check_result_t;
 
 /*

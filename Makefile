@@ -2,18 +2,33 @@ CC = gcc
 # CFLAGS = -Wall -Wextra -I./include -g
 CFLAGS = -Wall -I./include -g
 
+PROJECT = creppl
+TEST_PROJECT = test-creppl
+
 SRCDIR = src
 INCDIR = include
 OBJDIR = build/obj
 BINDIR = build/bin
 
-SRCFILES = $(wildcard $(SRCDIR)/*.c)
+MAIN_FNAME = main
+TEST_FNAME = test
+
+SRCFILES = $(filter-out $(SRCDIR)/$(TEST_FNAME).c, $(wildcard $(SRCDIR)/*.c))
+TEST_SRCFILES = $(filter-out $(SRCDIR)/$(MAIN_FNAME).c, $(wildcard $(SRCDIR)/*.c))
+
 OBJFILES = $(SRCFILES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-EXEC = $(BINDIR)/creppl
+TEST_OBJFILES = $(TEST_SRCFILES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+
+EXEC = $(BINDIR)/$(PROJECT)
+TEST_EXEC = $(BINDIR)/$(TEST_PROJECT)
 
 $(EXEC): $(OBJFILES)
 	@mkdir -p $(BINDIR)
 	$(CC) $(OBJFILES) -o $(EXEC)
+
+$(TEST_EXEC): $(TEST_OBJFILES)
+	@mkdir -p $(BINDIR)
+	$(CC) $(TEST_OBJFILES) -o $(TEST_EXEC)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
@@ -21,7 +36,10 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 build: $(EXEC)
 
-run:
+test: $(TEST_EXEC)
+	@./$(TEST_EXEC)
+
+run: $(EXEC)
 	@./$(EXEC)
 
 clean:
