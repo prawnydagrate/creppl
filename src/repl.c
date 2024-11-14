@@ -1,5 +1,6 @@
 #include "brackets.h"
 #include "files.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -23,6 +24,17 @@ long long handle_result(check_result_t res) {
   }
 }
 
+// https://stackoverflow.com/a/123724
+void trim(char *s) {
+  char *p = s;
+  int l = strlen(p);
+  while (isspace(p[l - 1]))
+    p[--l] = 0;
+  while (*p && isspace(*p))
+    ++p, --l;
+  memmove(s, p, l + 1);
+}
+
 void begin_repl(const unsigned long LINE_SIZE, const unsigned long BLOCK_SIZE,
                 const char *main_fname, const char *includes_fname,
                 const char *code_fname) {
@@ -35,15 +47,18 @@ void begin_repl(const unsigned long LINE_SIZE, const unsigned long BLOCK_SIZE,
       puts("[ABORT]");
       exit(0);
     }
+    trim(line);
     // separate includes from code
     if (strncmp(line, "#include", 8) == 0) {
       add_lines(includes_fname, line);
+      combine_code(includes_fname, code_fname, main_fname);
       continue;
     }
     // add line to block of code
     strcat(block, line);
     // handle depending on brackets
     long long status = handle_result(check(block));
+
     if (status == 0) {
       // code can be executed
       add_lines(code_fname, block);
